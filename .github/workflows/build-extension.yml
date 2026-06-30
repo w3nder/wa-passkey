@@ -1,0 +1,38 @@
+name: Build extension
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate manifest
+        run: python3 -c "import json; json.load(open('extension/manifest.json')); print('manifest.json OK')"
+
+      - name: Zip extension
+        run: |
+          cd extension
+          zip -r ../wa-passkey-extension.zip . -x '*.DS_Store'
+          cd ..
+          ls -l wa-passkey-extension.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wa-passkey-extension
+          path: wa-passkey-extension.zip
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: wa-passkey-extension.zip

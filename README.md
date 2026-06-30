@@ -17,8 +17,11 @@ Ao abrir o `web.whatsapp.com`, aparece um widget no canto inferior direito:
 
 ## Instalar (1 passo)
 
-1. `chrome://extensions` → ative **Modo do desenvolvedor**.
-2. **Carregar sem compactação** → selecione a pasta `extension/`.
+1. Pegue a extensão:
+   - **Zip pronto:** baixe `wa-passkey-extension.zip` na aba **Actions** (último build) ou em **Releases**
+     (gerado automaticamente pela Action), e descompacte; **ou**
+   - **Do código:** use a pasta `extension/` direto.
+2. `chrome://extensions` → ative **Modo do desenvolvedor** → **Carregar sem compactação** → selecione a pasta.
 3. Abra/recarregue uma aba **logada** do `web.whatsapp.com`.
 
 ## Por que precisa rodar no web.whatsapp.com
