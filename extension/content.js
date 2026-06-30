@@ -20,9 +20,11 @@
   widget.innerHTML =
     '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#202c33;font-weight:600">' +
       '<span id="pk-dot" style="width:9px;height:9px;border-radius:50%;background:#8696a0;display:inline-block"></span>' +
-      'WhatsApp passkey (whatsmeow)' +
+      '<span style="flex:1">WhatsApp passkey</span>' +
+      '<span id="pk-min" title="Minimizar" style="cursor:pointer;opacity:.65;padding:0 5px;font-size:16px;line-height:1">–</span>' +
+      '<span id="pk-close" title="Fechar" style="cursor:pointer;opacity:.65;padding:0 4px;font-size:16px;line-height:1">×</span>' +
     '</div>' +
-    '<div style="padding:12px">' +
+    '<div id="pk-body" style="padding:12px">' +
       '<div id="pk-status" style="color:#8696a0;margin-bottom:10px">Conectando ao whatsmeow…</div>' +
       '<button id="pk-check" style="width:100%;padding:9px;border:none;border-radius:8px;cursor:pointer;background:#25D366;color:#073127;font-weight:600;font-size:13px">🔑 Verificar passkey</button>' +
       '<div id="pk-result" style="margin-top:10px;white-space:pre-wrap;word-break:break-word;line-height:1.45"></div>' +
@@ -32,6 +34,33 @@
   var dot = widget.querySelector("#pk-dot");
   var statusEl = widget.querySelector("#pk-status");
   var resultEl = widget.querySelector("#pk-result");
+  var body = widget.querySelector("#pk-body");
+
+  // Floating launcher to reopen after closing (the bridge keeps working while hidden).
+  var launcher = document.createElement("button");
+  launcher.textContent = "🔑";
+  launcher.title = "Abrir WhatsApp passkey";
+  Object.assign(launcher.style, {
+    position: "fixed", bottom: "16px", right: "16px", zIndex: 2147483647,
+    width: "44px", height: "44px", borderRadius: "50%", border: "none", cursor: "pointer",
+    background: "#25D366", fontSize: "20px", boxShadow: "0 4px 14px rgba(0,0,0,.4)", display: "none",
+  });
+  document.documentElement.appendChild(launcher);
+
+  function openWidget() { widget.style.display = "block"; launcher.style.display = "none"; localStorage.removeItem("pk-closed"); }
+  function closeWidget() { widget.style.display = "none"; launcher.style.display = "block"; localStorage.setItem("pk-closed", "1"); }
+  function toggleMin() {
+    var hidden = body.style.display === "none";
+    body.style.display = hidden ? "block" : "none";
+    localStorage.setItem("pk-min", hidden ? "0" : "1");
+  }
+  widget.querySelector("#pk-close").addEventListener("click", closeWidget);
+  widget.querySelector("#pk-min").addEventListener("click", toggleMin);
+  launcher.addEventListener("click", openWidget);
+
+  // Restore last UI state (the signing loop runs regardless of visibility).
+  if (localStorage.getItem("pk-closed") === "1") closeWidget();
+  if (localStorage.getItem("pk-min") === "1") body.style.display = "none";
 
   function setStatus(online, text) {
     dot.style.background = online ? "#25D366" : "#8696a0";
