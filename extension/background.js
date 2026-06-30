@@ -11,3 +11,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     .catch(function (e) { sendResponse({ status: 0, error: String(e) }); });
   return true;
 });
+
+// Clicking the toolbar icon toggles the in-page widget (it must live on the page for WebAuthn).
+chrome.action.onClicked.addListener(function (tab) {
+  if (tab && tab.id != null) chrome.tabs.sendMessage(tab.id, { type: "toggle-widget" }, function () { void chrome.runtime.lastError; });
+});
