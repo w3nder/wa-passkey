@@ -1,56 +1,46 @@
 # wa-passkey
 
-Ferramentas e engenharia reversa do fluxo de **passkey (Shortcake)** do WhatsApp Web —
-a verificação por chave de acesso exigida ao vincular um dispositivo companion em contas
-no rollout. Companion da integração em [w3nder/whatsmeow](https://github.com/w3nder/whatsmeow)
-(ver `passkey.go` / `passkeyauth/`).
+**Uma** extensão Chrome para o fluxo de **passkey (Shortcake)** do WhatsApp Web — usada ao
+vincular um companion (web/whatsmeow) em contas que exigem chave de acesso. Companion da
+integração em [w3nder/whatsmeow](https://github.com/w3nder/whatsmeow) (`passkey.go` / `passkeyauth/`).
 
-## O problema
+## O que a extensão faz (tudo em 1)
 
-Algumas contas exigem uma **assertion WebAuthn** ao vincular um companion (web/whatsmeow):
-o servidor envia uma notificação `passkey_prologue_request` e o vínculo só conclui se a
-assertion for fornecida. Uma lib headless **não consegue assinar sozinha** — precisa de um
-authenticator que detenha a chave privada da passkey **já registrada na conta**.
+Ao abrir o `web.whatsapp.com`, aparece um widget no canto inferior direito:
 
-Regra-chave do browser: `navigator.credentials.get({ rpId: "whatsapp.com" })` **só roda na
-origem `web.whatsapp.com`**. Por isso a assinatura acontece dentro dessa página (via extensão).
+- **Assina automático (bridge):** quando o whatsmeow (rodando local, `127.0.0.1:7799`) precisa da
+  passkey para concluir o vínculo, a extensão roda o `navigator.credentials.get()` na origem certa
+  (`whatsapp.com`) e devolve a assinatura. O status mostra se o whatsmeow está online.
+- **🔑 Verificar passkey:** botão que checa se a conta tem passkey e **onde ela está**:
+  - **platform** → neste dispositivo (Touch ID do Mac) → assina sem celular, sem Bluetooth.
+  - **cross-platform** → celular/chave → precisa dele por perto (Bluetooth / hybrid).
 
-## Conteúdo
+## Instalar (1 passo)
+
+1. `chrome://extensions` → ative **Modo do desenvolvedor**.
+2. **Carregar sem compactação** → selecione a pasta `extension/`.
+3. Abra/recarregue uma aba **logada** do `web.whatsapp.com`.
+
+## Por que precisa rodar no web.whatsapp.com
+
+Regra do browser: `navigator.credentials.get({ rpId: "whatsapp.com" })` **só funciona na origem
+`web.whatsapp.com`**. Por isso a assinatura acontece dentro dessa página (a extensão injeta ali), e
+um front próprio (React/Vue, localhost) **não** consegue assinar — apenas orquestrar/exibir.
+
+## Estrutura
 
 ```
-extensions/
-  bridge/     Extensão Chrome: assina a assertion no web.whatsapp.com e entrega ao whatsmeow
-              (HTTP local 127.0.0.1:7799). Resolve a CSP usando o service worker.
-  checker/    Extensão Chrome: botão que verifica se a conta TEM passkey e ONDE ela está
-              (platform = neste device / cross-platform = celular).
-tampermonkey/
-  passkey-bridge.user.js   Versão userscript do bridge (Tampermonkey + GM_xmlhttpRequest).
+extension/
+  manifest.json   MV3
+  background.js   fetch proxy p/ 127.0.0.1 (fura a CSP da página)
+  content.js      widget (status + botão) e loop do bridge
+  inject.js       WebAuthn na origem whatsapp.com (assinar + verificar)
 docs/
-  PROTOCOL.md  Protocolo Shortcake revertido (IQs, crypto do verification code, HKDF, etc.).
+  PROTOCOL.md     protocolo Shortcake revertido (IQs, crypto, HKDF, etc.)
 ```
-
-## Como usar o bridge
-
-1. Rode o whatsmeow com o `BrowserPasskeyAuthenticator` servindo em `127.0.0.1:7799`
-   (ver `cmd/passkeytest -mode bridge` no fork).
-2. Instale `extensions/bridge` em `chrome://extensions` (Modo desenvolvedor → Carregar sem
-   compactação), ou o userscript do Tampermonkey.
-3. Abra uma aba **logada** do `web.whatsapp.com`.
-4. Escaneie o QR; quando o servidor pedir a passkey, o browser assina (Touch ID / celular) e
-   o whatsmeow conclui o vínculo.
-
-## Como usar o checker
-
-Instale `extensions/checker`, abra o `web.whatsapp.com` e clique no botão **🔑 Verificar passkey**.
-Ele mostra se a conta tem passkey e onde está:
-
-- **platform** → neste dispositivo (ex.: Touch ID do Mac) → assina sem celular, sem Bluetooth.
-- **cross-platform** → celular/chave → precisa dele por perto (Bluetooth / hybrid).
 
 ## Limites (honestos)
 
 - **Criar/registrar** passkey **não existe** no WhatsApp Web (é Meta Accounts Center / app do
-  celular). Logo, não dá pra registrar uma passkey de software headless.
-- A assertion só roda na origem `web.whatsapp.com` → um front próprio (React/Vue) **não** assina;
-  só orquestra/exibe.
+  celular) → não dá pra registrar passkey de software headless.
 - Conta **sem** passkey vincula normal por QR, **sem** browser. Passkey é opt-in.

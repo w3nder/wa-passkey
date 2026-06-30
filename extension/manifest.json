@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "WhatsApp passkey checker",
+  "name": "WhatsApp passkey (whatsmeow)",
   "version": "1.0",
-  "description": "Mostra um botão no web.whatsapp.com para verificar a passkey da conta e onde ela está (Mac ou celular).",
+  "description": "Verifica a passkey da conta e assina o vínculo do whatsmeow, tudo no web.whatsapp.com.",
+  "host_permissions": [
+    "http://127.0.0.1:7799/*",
+    "https://web.whatsapp.com/*"
+  ],
+  "background": { "service_worker": "background.js" },
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],
